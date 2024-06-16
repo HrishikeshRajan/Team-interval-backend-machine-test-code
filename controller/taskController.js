@@ -21,9 +21,9 @@ import connection from '../config/config.js';
  */
 export const create = asyncHandler(async (req,res,next) => {
     
-    const { heading, description, dateTime, priority, image } = req.body;
+    const { heading, description, dateTime, priority, imageUrl } = req.body;
     const q = "INSERT INTO task SET ?";
-    connection.query(q, { heading, description, dateTime, priority, image  }, (err, result) => {
+    connection.query(q, { heading, description, dateTime, priority, image:imageUrl  }, (err, result) => {
         if (err) return res.json(err);
         return res.status(200).json(result);
     });
@@ -61,10 +61,11 @@ export const update = asyncHandler((req,res,next) => {
     if(!req.params.taskId){
         throw new Error('Please provide a taskId')
     }
-    const q = `UPDATE task SET ? where id=${req.params.taskId}`;
+    const {heading, description, dateTime, imageUrl, priority,  id } = req.body;
 
-    const { heading, description, date, priority, image='texturl' } = req.body;
-    connection.query(q, { heading, description, date, priority, image }, (err, result) => {
+    const q = `UPDATE task SET heading = ?, description = ?, dateTime = ?, image = ?, priority = ? WHERE id = ?`;
+
+    connection.query(q, [heading, description, dateTime, imageUrl, priority, id], (err, result) => {
         if (err) return res.json(err);
         return res.status(200).json(result);
     });
@@ -72,9 +73,9 @@ export const update = asyncHandler((req,res,next) => {
 
 
 /**
- * Fetch task by taskId
+ * Fetch single task by taskId
  * @param {string} taskId
- * @returns deleted task id
+ * @returns return single task
  */
 export const getOne = asyncHandler((req,res,next) => {
     if(!req.params.taskId){
@@ -89,10 +90,10 @@ export const getOne = asyncHandler((req,res,next) => {
 })
 
 /**
- * Fetch task by taskId
+ * Fetch all tasks
  * @param {string} taskId
- * @returns deleted task id
- */
+ * @returns list of tasks
+ *  */
 export const getAll = asyncHandler((req,res,next) => {
     const q = `SELECT * FROM task ORDER BY dateTime ASC`;
 
@@ -105,12 +106,9 @@ export const getAll = asyncHandler((req,res,next) => {
 /**
  * Fetch sort by priority
  * @param {string} taskId
- * @returns deleted task id
+ * @returns sorted tasks
  */
 export const sortByPriority = asyncHandler((req,res,next) => {
-    // const q = `SELECT * FROM task ORDER BY CASE priority WHEN 'low' THEN 1 WHEN 'medium' THEN 2 WHEN 'high' THEN 3 END`;
-
-    
 
     const { sort } = req.query;
 
