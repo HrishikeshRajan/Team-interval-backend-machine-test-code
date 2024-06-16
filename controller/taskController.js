@@ -94,8 +94,65 @@ export const getOne = asyncHandler((req,res,next) => {
  * @returns deleted task id
  */
 export const getAll = asyncHandler((req,res,next) => {
-    const q = `SELECT * FROM task ORDER BY priority ASC`;
+    const q = `SELECT * FROM task ORDER BY dateTime ASC`;
 
+    connection.query(q, (err, result) => {
+        if (err) return res.json(err);
+        return res.status(200).json(result);
+    });
+})
+
+/**
+ * Fetch sort by priority
+ * @param {string} taskId
+ * @returns deleted task id
+ */
+export const sortByPriority = asyncHandler((req,res,next) => {
+    // const q = `SELECT * FROM task ORDER BY CASE priority WHEN 'low' THEN 1 WHEN 'medium' THEN 2 WHEN 'high' THEN 3 END`;
+
+    
+
+    const { sort } = req.query;
+
+    let orderByClause = '';
+    switch (sort) {
+        case 'low':
+            orderByClause = `
+                ORDER BY 
+                    CASE priority
+                        WHEN 'low' THEN 1
+                        WHEN 'medium' THEN 2
+                        WHEN 'high' THEN 3
+                    END
+            `;
+            break;
+        case 'medium':
+            orderByClause = `
+                ORDER BY 
+                    CASE priority
+                        WHEN 'medium' THEN 1
+                        WHEN 'low' THEN 2
+                        WHEN 'high' THEN 3
+                    END
+            `;
+            break;
+        case 'high':
+            orderByClause = `
+                ORDER BY 
+                    CASE priority
+                        WHEN 'high' THEN 1
+                        WHEN 'medium' THEN 2
+                        WHEN 'low' THEN 3
+                    END
+            `;
+        break;
+            case 'all':
+                orderByClause = `ORDER BY dateTime ASC`
+                break;
+        default:
+            orderByClause = `ORDER BY dateTime ASC`;
+    }
+const q = `SELECT * FROM task ${orderByClause}`
     connection.query(q, (err, result) => {
         if (err) return res.json(err);
         return res.status(200).json(result);

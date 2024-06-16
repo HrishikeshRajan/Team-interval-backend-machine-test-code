@@ -6,6 +6,7 @@ router.route('/create').post(taskController.create)
 router.route('/update/:taskId').put(taskController.update)
 router.route('/remove/:taskId').delete(taskController.remove)
 router.route('/list/all').get(taskController.getAll)
+router.route('/list/sort/priority').get(taskController.sortByPriority)
 router.route('/:taskId').get(taskController.getOne)
 
 
