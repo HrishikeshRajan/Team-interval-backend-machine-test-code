@@ -9,16 +9,7 @@
  */
 
 import asyncHandler from 'express-async-handler'
-import { fileURLToPath } from 'url';
-import path, { dirname } from 'path';
-import fs from 'fs';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-
-let arr = []
-const id = Math.random() * 100;
-
+import connection from '../config/config.js';
 
 /**
  * Create new task
@@ -28,35 +19,14 @@ const id = Math.random() * 100;
  * @param {string} time
  * @returns new task
  */
-export const create = asyncHandler((req,res,next) => {
-
-     const image = req.files.image
-
-     
-     if(image){
-      
-        const parentDir = path.resolve(__dirname, '..');
-        const targetDir = path.join(parentDir, 'assets');
-
-        if (!fs.existsSync(targetDir)) {
-            fs.mkdirSync(targetDir, { recursive: true });
-        }
-        const imagePath = path.join(targetDir, `image-${id}.jpg`);
-      
-        image.mv(imagePath, (err) => {
-            if (err) {
-                return next(err);
-            }
-        });
-     }
-
-    const task  ={id, ...req.body, image:req.file}
-
+export const create = asyncHandler(async (req,res,next) => {
     
-
-    arr.push(task)
-    res.json(task)
-    return
+    const { heading, description, dateTime, priority, image } = req.body;
+    const q = "INSERT INTO task SET ?";
+    connection.query(q, { heading, description, dateTime, priority, image  }, (err, result) => {
+        if (err) return res.json(err);
+        return res.status(200).json(result);
+    });
 })
 
 /**
@@ -70,8 +40,12 @@ export const remove = asyncHandler((req,res,next) => {
         throw new Error('Please select a task')
      }
 
-      arr = arr.filter((task) => task.id !== req.params.taskId)
-    res.json({message:arr, status:success})
+     const q = `DELETE FROM task WHERE id=${req.params.taskId}`;
+
+     connection.query(q, (err, result) => {
+         if (err) return res.json(err);
+         return res.status(200).json({ data: "task deleted" });
+     });
 })
 
 /**
@@ -87,17 +61,13 @@ export const update = asyncHandler((req,res,next) => {
     if(!req.params.taskId){
         throw new Error('Please provide a taskId')
     }
+    const q = `UPDATE task SET ? where id=${req.params.taskId}`;
 
-    const taskIndex = arr.indexOf((task) => task.id === req.params.taskId)
-    const task = arr[taskIndex]
-    const newTask = {...task, ...req.body}
-          if(req.file){
-            newTask.image = req.file
-          }
-
-          arr[taskIndex] = newTask;
-
-    res.json({message:newTask, success:200})
+    const { heading, description, date, priority, image='texturl' } = req.body;
+    connection.query(q, { heading, description, date, priority, image }, (err, result) => {
+        if (err) return res.json(err);
+        return res.status(200).json(result);
+    });
 })
 
 
@@ -110,7 +80,26 @@ export const getOne = asyncHandler((req,res,next) => {
     if(!req.params.taskId){
         throw new Error('Please provide a taskId')
     }
-    const task = arr.find((task) => task.id.toString() === req.params.taskId.toString())
-    res.json({message:task, success:true})
+    const q = `SELECT * FROM task where id=${req.params.taskId}`;
+
+    connection.query(q, (err, result) => {
+        if (err) return res.json(err);
+        return res.status(200).json(result[0]);
+    });
 })
+
+/**
+ * Fetch task by taskId
+ * @param {string} taskId
+ * @returns deleted task id
+ */
+export const getAll = asyncHandler((req,res,next) => {
+    const q = `SELECT * FROM task ORDER BY priority ASC`;
+
+    connection.query(q, (err, result) => {
+        if (err) return res.json(err);
+        return res.status(200).json(result);
+    });
+})
+
 
